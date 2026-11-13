@@ -1,0 +1,6 @@
+.vscode/
+.idea/
+__pycache__/
+.DS_Store
+# Output of the temporary smoke test (main.py)
+tables/table_smoke_*.csv
