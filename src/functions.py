@@ -10,13 +10,13 @@ import sys
 
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 import torch
 from sklearn.metrics import root_mean_squared_error
 from sklearn.model_selection import KFold, ParameterGrid, train_test_split
 
 from src.classes import FullyConnectedNeuralNetwork
 from src.constants import *
-
 
 # -----------------------------------------------------------------------
 # Setup
@@ -176,6 +176,58 @@ def cross_validate(hyperparameters, x, y, n_splits):
 
     return pd.DataFrame.from_records(metric_records), pd.DataFrame.from_records(history_records)
 
+# -----------------------------------------------------------------------
+# Plot figures
+# -----------------------------------------------------------------------
+
+def plot_pilot_architecture_loss_(architectures):
+    """Plots the training and validation loss for the different architectures."""
+
+    fig, axes = plt.subplots(nrows=1, ncols=len(architectures), figsize=(15, 4), layout="constrained")
+    for i, architecture in enumerate(architectures):
+        filename = f"tables/pilot/table_pilot_architecture_{architecture}.csv"
+        df_history = pd.read_csv(filename)
+
+        axes[i].plot(df_history["epoch"],
+                     df_history["loss_train"],
+                     label="Training loss")
+
+        axes[i].plot(df_history["epoch"],
+                     df_history["loss_valid"],
+                     label="Validation loss")
+
+        axes[i].set_title(f"Architecture: {architecture}")
+        axes[i].set_xlabel("Epoch")
+        axes[i].set_ylabel("Loss")
+        axes[i].legend(fontsize=fontsize_legend)
+
+    fig.savefig(os.path.join("figures", "pilot", f"figure_01_pilot_architecture_loss_curves.png"))
+    plt.close(fig)
+
+def plot_pilot_lr_loss_(architecture, learning_rates):
+    """Plots the training and validation loss for the different learning rates."""
+
+    fig, axes = plt.subplots(nrows=1, ncols=len(learning_rates), figsize=(15, 4), layout="constrained")
+
+    for i, learning_rate in enumerate(learning_rates):
+        filename = f"tables/pilot/table_pilot_learning_rate_{architecture}_{learning_rate}.csv"
+        df_history = pd.read_csv(filename)
+
+        axes[i].plot(df_history["epoch"],
+                     df_history["loss_train"],
+                     label="Training loss")
+
+        axes[i].plot(df_history["epoch"],
+                     df_history["loss_valid"],
+                     label="Validation loss")
+
+        axes[i].set_title(f"Learning rate: {learning_rate}")
+        axes[i].set_xlabel("Epoch")
+        axes[i].set_ylabel("Loss")
+        axes[i].legend(fontsize=fontsize_legend)
+
+    fig.savefig(os.path.join("figures", "pilot", f"figure_02_pilot_lr_loss_curves.png"))
+    plt.close(fig)
 
 # -----------------------------------------------------------------------
 # Summaries
