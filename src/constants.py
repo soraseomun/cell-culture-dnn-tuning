@@ -43,3 +43,10 @@ FEATURE_COLUMNS = [
 # Every results table starts with these columns, in this order, so tables
 # from different team members can be combined with pandas.concat().
 HYPERPARAMETER_COLUMNS = ["hidden_layers", "activation", "learning_rate", "batch_size", "weight_decay", "epochs"]
+
+# --- Plot formatting ----------------------------------------------------
+COLORS = ["tab:blue", "tab:orange", "tab:green", "tab:red"]
+LINESTYLES = ["-", ":", "--", "-."]
+fontsize_xy_label = 14
+fontsize_ticks = 12
+fontsize_legend = 12
