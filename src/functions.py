@@ -125,18 +125,47 @@ def split_grid(param_grid, n_parts, part):
     return all_sets[part - 1::n_parts]
 
 
-def run_search(hyperparameter_sets, x, y):
+def _hyperparameter_key(values):
+    """Text key for one hyperparameter set, used to spot sets that are already done."""
+    return tuple(str(values[column]) for column in HYPERPARAMETER_COLUMNS)
+
+
+def run_search(hyperparameter_sets, x, y, checkpoint_filename=None):
     """
     Evaluate each hyperparameter set with a single train-test split.
+
+    checkpoint_filename : str or None
+        If given (e.g. "grid_search/table_search_part1.csv"), the results are
+        saved to tables/<checkpoint_filename> after every hyperparameter set.
+        If the run stops (error, laptop sleeps, ...), running it again skips
+        the sets already in that file and continues where it stopped.
 
     Returns a DataFrame with one row per (hyperparameter set, target).
     """
     x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=TEST_SIZE, random_state=RANDOM_SEED)
 
     records = []
+    done_keys = set()
+
+    if checkpoint_filename is not None and os.path.exists(os.path.join(TABLES_DIR, checkpoint_filename)):
+        df_done = load_table(checkpoint_filename)
+        records = df_done.to_dict("records")
+        done_keys = {_hyperparameter_key(record) for record in records}
+        print(f"Resuming: {len(done_keys)} hyperparameter sets already in {checkpoint_filename}")
+
     for i, hyperparameters in enumerate(hyperparameter_sets, start=1):
-        set_records, _ = train_and_evaluate(hyperparameters, x_train, y_train, x_test, y_test)
-        records.extend(set_records)
+        # Fill in default values the same way the model does, then skip finished sets
+        model_settings = FullyConnectedNeuralNetwork(**hyperparameters)
+        key = _hyperparameter_key({column: getattr(model_settings, column) for column in HYPERPARAMETER_COLUMNS})
+
+        if key not in done_keys:
+            set_records, _ = train_and_evaluate(hyperparameters, x_train, y_train, x_test, y_test)
+            records.extend(set_records)
+            done_keys.add(key)
+
+            if checkpoint_filename is not None:
+                save_table(pd.DataFrame.from_records(records), checkpoint_filename)
+
         progress_bar(i, len(hyperparameter_sets))
     print()
 
@@ -251,11 +280,17 @@ def summarize_cv(df_metrics):
     Mean and standard deviation of RMSE and NRMSE across folds, for each
     hyperparameter set and target. (pandas uses the sample standard
     deviation, ddof = 1.)
+
+    fit_time_s is the mean training time per fold. Each fold trains one
+    model for all three targets, so every target row of a fold has the same
+    time and the mean over a target's rows equals the mean over the folds.
     """
-    df_summary = (df_metrics
-                  .groupby(HYPERPARAMETER_COLUMNS + ["target"], sort=False)[["RMSE", "NRMSE"]]
-                  .agg(["mean", "std"]))
+    grouped = df_metrics.groupby(HYPERPARAMETER_COLUMNS + ["target"], sort=False)
+
+    df_summary = grouped[["RMSE", "NRMSE"]].agg(["mean", "std"])
     df_summary.columns = [f"{metric}_{stat}" for metric, stat in df_summary.columns]
+    df_summary["fit_time_s"] = grouped["fit_time_s"].mean()
+
     return df_summary.reset_index()
 
 
@@ -264,9 +299,13 @@ def summarize_cv(df_metrics):
 # -----------------------------------------------------------------------
 
 def save_table(df, filename):
-    """Save a DataFrame to tables/<filename>."""
-    os.makedirs(TABLES_DIR, exist_ok=True)
-    df.to_csv(os.path.join(TABLES_DIR, filename), index=False)
+    """
+    Save a DataFrame to tables/<filename>. Subfolders in the filename
+    (e.g. "pilot/table.csv") are created if they don't exist yet.
+    """
+    path = os.path.join(TABLES_DIR, filename)
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    df.to_csv(path, index=False)
 
 
 def load_table(filename):
