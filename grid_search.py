@@ -24,7 +24,7 @@ my_grid = sf.split_grid(param_grid, n_parts, part)
 print(f"Testing {len(my_grid)} configurations.")
 print()
 # Run grid search and save results
-test_results = sf.run_search(my_grid, x, y, checkpoint_filename="grid_search/table_search_test.csv")
+test_results = sf.run_search(my_grid, x, y, checkpoint_filename=f"grid_search/table_search_set{part}.csv")
 
 print(test_results)
 
