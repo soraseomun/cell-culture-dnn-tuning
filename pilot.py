@@ -66,7 +66,7 @@ print(f" ==================================================================="
       f" LEARNING RATE INFLUENCE"
       f" ==================================================================")
 
-# Define the hidden layers configurations
+# Define the different learning rates
 param_grid = dict(
     hidden_layers=[(64, 32)],
     activation=["relu"],
