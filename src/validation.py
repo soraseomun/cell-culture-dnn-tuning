@@ -8,6 +8,7 @@
 import os
 
 import matplotlib.pyplot as plt
+import pandas as pd
 
 import src.functions as sf
 from src.constants import *
@@ -17,12 +18,38 @@ CV_FOLDS_TABLE = "validation/table_cv_optimal_folds.csv"
 CV_HISTORY_TABLE = "validation/table_cv_optimal_history.csv"
 CV_SUMMARY_TABLE = "table_cv_optimal_summary.csv"
 CV_LOSS_FIGURE = "figure_cv_optimal_loss_curves.png"
+CV_EPOCH_CHECK_TABLE = "validation/table_cv_optimal_epoch_check.csv"
+
+RANKING_TABLE = "grid_search/table_search_ranking.csv"
 
 N_SPLITS_OPTIMAL = 4
 
 # A fold whose lowest validation loss falls in the last 10% of the epochs
 # may still have been improving when training stopped.
 LATE_BEST_EPOCH_FRACTION = 0.9
+
+# Longer training used to test whether the original epoch budget was enough.
+EPOCH_CHECK_EPOCHS = 2000
+
+
+def load_optimal_hyperparameters():
+    """
+    Read the best hyperparameter set (first row) from the grid-search ranking
+    table, so the optimal values are never typed in by hand.
+
+    Values are converted to plain Python types: PyTorch's DataLoader rejects
+    NumPy integers as batch_size.
+    """
+    best = sf.load_table(RANKING_TABLE).iloc[0]
+
+    return dict(
+        hidden_layers=tuple(int(n) for n in best["hidden_layers"]),
+        activation=str(best["activation"]),
+        learning_rate=float(best["learning_rate"]),
+        batch_size=int(best["batch_size"]),
+        weight_decay=float(best["weight_decay"]),
+        epochs=int(best["epochs"]),
+    )
 
 
 def run_optimal_cv(hyperparameters, x, y):
@@ -86,3 +113,39 @@ def plot_cv_loss_curves(log_scale=False):
     os.makedirs(FIGURES_DIR, exist_ok=True)
     fig.savefig(os.path.join(FIGURES_DIR, CV_LOSS_FIGURE), dpi=200)
     plt.close(fig)
+
+
+def run_epoch_check(hyperparameters, x, y, epochs=EPOCH_CHECK_EPOCHS):
+    """
+    Repeat the 4-fold cross-validation with a larger epoch budget and compare
+    it with the saved summary. The seeds are reset before every model, so
+    the first epochs follow exactly the same path as the original run and
+    any difference comes only from the extra epochs. If NRMSE barely changes
+    (less than its fold-to-fold standard deviation), the original budget was
+    enough.
+
+    Run run_optimal_cv() first. Returns the comparison table.
+    """
+    base_epochs = hyperparameters["epochs"]
+    longer = {**hyperparameters, "epochs": epochs}
+
+    df_folds_long, _ = sf.cross_validate(longer, x, y, n_splits=N_SPLITS_OPTIMAL)
+    df_long = sf.summarize_cv(df_folds_long)
+    df_base = sf.load_table(CV_SUMMARY_TABLE)
+    df_base_folds = sf.load_table(CV_FOLDS_TABLE)
+
+    df_check = pd.DataFrame({
+        "target": df_base["target"],
+        f"NRMSE_mean_{base_epochs}": df_base["NRMSE_mean"],
+        f"NRMSE_std_{base_epochs}": df_base["NRMSE_std"],
+        f"NRMSE_mean_{epochs}": df_long["NRMSE_mean"].to_numpy(),
+        f"NRMSE_std_{epochs}": df_long["NRMSE_std"].to_numpy(),
+    })
+    df_check["change_percent"] = 100 * (df_check[f"NRMSE_mean_{epochs}"] / df_check[f"NRMSE_mean_{base_epochs}"] - 1)
+    df_check[f"mean_best_epoch_{base_epochs}"] = df_base_folds.groupby("fold")["best_epoch"].first().mean()
+    df_check[f"mean_best_epoch_{epochs}"] = df_folds_long.groupby("fold")["best_epoch"].first().mean()
+    df_check[f"fit_time_s_{epochs}"] = df_long["fit_time_s"].to_numpy()
+
+    sf.save_table(df_check, CV_EPOCH_CHECK_TABLE)
+
+    return df_check
