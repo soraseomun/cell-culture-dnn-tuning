@@ -82,7 +82,7 @@ plt.close(fig)
 model = make_pipeline(StandardScaler(),
                       PolynomialFeatures(degree=best_degree, include_bias=False), LinearRegression())
 
-#Rub 4-fold cross-validation for each target
+#Run 4-fold cross-validation for each target
 records_cv =[]
 for j, target in enumerate(TARGET_COLUMNS):
     cv_results = cross_validate(model, x, y[:, j],cv=4, scoring="neg_root_mean_squared_error")
