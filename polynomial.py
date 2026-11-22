@@ -79,6 +79,29 @@ df_cv = pd.DataFrame.from_records(records_cv, columns=columns_cv)
 df_cv.to_csv(os.path.join(TABLES_DIR, "table_polynomial_cv.csv"), index = False)
 print(df_cv)
 
+df_poly = pd.read_csv(os.path.join(TABLES_DIR, "table_polynomial_cv.csv"))
+df_nn = pd.read_csv(os.path.join(TABLES_DIR, "table_cv_optimal_summary.csv"))
+
+records_comp =[]
+for target in TARGET_COLUMNS:
+    mask_poly = df_poly.loc[:, "target"] == target
+    mask_nn = df_nn.loc[:, "target"] == target
+    poly_mean = df_poly.loc[mask_poly, "NRMSE_mean"].to_numpy()[0]
+    poly_std = df_poly.loc[mask_poly, "NRMSE_std"].to_numpy()[0]
+    nn_mean = df_nn.loc[mask_nn, "NRMSE_mean"].to_numpy()[0]
+    nn_std = df_nn.loc[mask_nn, "NRMSE_std"].to_numpy()[0]
+    records_comp.append((target,poly_mean,poly_std,nn_mean,nn_std))
+
+columns_comp = ["target", "poly_NRMSE_mean", "poly_NRMSE_std", "nn_NRMSE_mean", "nn_NRMSE_std"]
+df_comp = pd.DataFrame.from_records(records_comp, columns=columns_comp)
+df_comp.to_csv(os.path.join(TABLES_DIR, "table_comparison_poly_vs_nn.csv"), index = False)
+print(df_comp)
+
+poly_time = np.mean(df_poly.loc[:, "fit_time_s"])
+nn_time = np.mean(df_nn.loc[:, "fit_time_s"])
+print(f"Polynomial fit time: {poly_time:.2f} s")
+print(f"Neutral network fit time: {nn_time:.2f} s")
+
 
 
 
