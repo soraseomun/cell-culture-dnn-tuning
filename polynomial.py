@@ -100,7 +100,7 @@ print(df_comp)
 poly_time = np.mean(df_poly.loc[:, "fit_time_s"])
 nn_time = np.mean(df_nn.loc[:, "fit_time_s"])
 print(f"Polynomial fit time: {poly_time:.2f} s")
-print(f"Neutral network fit time: {nn_time:.2f} s")
+print(f"Neural network fit time: {nn_time:.2f} s")
 
 
 
