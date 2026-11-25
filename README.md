@@ -110,12 +110,16 @@ If training time matters, the polynomial model is a reasonable alternative.
 The polynomial model was chosen by testing degrees 1 to 6 on the test set. The mean NRMSE dropped from 0.590 at degree 1 to 0.385 at degree 5,
 then rose to 0.389 at degree 6, which shows overfitting. Degree 5 was kept and evaluated with 4-fold cross-validation, like the optimal network.
 
-insert table
+| target                                     | poly_NRMSE_mean | poly_NRMSE_std | nn_NRMSE_mean | nn_NRMSE_std |
+|--------------------------------------------|-----------------|----------------|---------------|--------------|
+| Specific Growth Rate [d^-1]                | 0.402           | 0.004          | 0.385         | 0.006        |
+| Specific Death Rate [d^-1]                 | 0.298           | 0.001          | 0.285         | 0.025        |
+| Specific Production Rate [pg cell^-1 d^-1] | 0.481           | 0.005          | 0.457         | 0.002        |
 
-The neural network is more accurate for all 3 targets, by 4.2 to 5.0%. Fpr the death rate, the difference (0.013) is smaller than the variation of the network between folds (0.025),
+The neural network is more accurate for all 3 targets, by 4.2 to 5.0%. For the death rate, the difference (0.013) is smaller than the variation of the network between folds (0.025),
 so the improvement is not clear for this target. The network is also much slower: one fit takes 41.8 s against 0.53 s for the polynomial,
 about 79 times longer. The network is the most accurate model, but the polynomial is a strong and fast baseline.
-One small difference between the two evaluations: the polynomial cross-validation did not shuffle the data before splitting, while the network's did. We checked that shuffling changes the polynomial NRMSE by only 0.001.
+One small difference between the two evaluations: the polynomial cross-validation did not shuffle the data before splitting, while the network's did. We checked that shuffling changes the polynomial NRMSE by only about 0.001.
 
 ![Polynomial degree search](figures/figure_polynomial_degree.png)
 
