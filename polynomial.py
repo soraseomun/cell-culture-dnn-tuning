@@ -31,7 +31,6 @@ for degree in degrees:
     model = make_pipeline(StandardScaler(),
                       PolynomialFeatures(degree=degree, include_bias=False), LinearRegression())
 
-    #Measure the training time
     #Train the model on the training set
 
     model.fit(x_train , y_train)
