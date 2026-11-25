@@ -42,8 +42,7 @@ with the same split as the rest of the project.
 then LinearRegression. The scaler puts all features on the same scale. PolynomialFeatures adds squared and cross terms,
 so a linear model can fit non-linear effects.
 The model is trained on the training set and tested on the test set. For each target, the script computes the RMSE and the NRMSE 
-(RMSE divided by the IQR of the target), so targets with different units can be compared. It also measures the training time with time.perf_counter.
-All results are saved in tables/table_polynomial_search.csv.
+(RMSE divided by the IQR of the target), so targets with different units can be compared.
 
 **Best degree.** The script averages the NRMSE of the 3 targets for each degree and keeps the lowest one. The choice is made on test error, not training error,
 because training error always drops when the degree goes up. The figure figures/figure_polynomial_degree.png shows NRMSE against degree for each target.
@@ -90,6 +89,7 @@ With too much weight decay, the weights are pushed too close to zero and the mod
 ![Weight decay sensitivity](figures/sensitivity/figure_sensitivity_weight_decay.png)
 
 ### Next Steps
+
 **Finer search around the optimum.** The optimal network was at the edge of the grid search: 0.01 was the largest learning rate tested and (16, 8) was the smallest architecture.
 The sensitivity analysis shows that a learning rate of 0.03 gives the same error as 0.01. A next step would be a finer search of the learning rate between 0.01 and 0.03.
 
@@ -102,7 +102,7 @@ Training with fewer epochs could reduce the training time without losing accurac
 
 **Weight decay.** Weight decay did not improve the network, so it can stay at 0 and does not need to be searched again.
 
-**Model choice.** The network is only 4.6 % more accurate than a degree-5 polynomial, but about 79 times slower to train.
+**Model choice.** The network is only 4.6 % more accurate than a degree-5 polynomial, but roughly 80 times slower to train.
 If training time matters, the polynomial model is a reasonable alternative.
 
 
@@ -117,8 +117,8 @@ then rose to 0.389 at degree 6, which shows overfitting. Degree 5 was kept and e
 | Specific Production Rate [pg cell^-1 d^-1] | 0.481           | 0.005          | 0.457         | 0.002        |
 
 The neural network is more accurate for all 3 targets, by 4.2 to 5.0%. For the death rate, the difference (0.013) is smaller than the variation of the network between folds (0.025),
-so the improvement is not clear for this target. The network is also much slower: one fit takes 41.8 s against 0.53 s for the polynomial,
-about 79 times longer. The network is the most accurate model, but the polynomial is a strong and fast baseline.
+so the improvement is not clear for this target. The network is also much slower: one fit takes about 40 seconds against about half a second for the polynomial, roughly 80 times longer.
+The network is the most accurate model, but the polynomial is a strong and fast baseline.
 One small difference between the two evaluations: the polynomial cross-validation did not shuffle the data before splitting, while the network's did. We checked that shuffling changes the polynomial NRMSE by only about 0.001.
 
 ![Polynomial degree search](figures/figure_polynomial_degree.png)

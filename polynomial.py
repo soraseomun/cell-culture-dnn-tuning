@@ -2,7 +2,6 @@
 # Polynomial regression comparison
 # =====================================================================
 
-import time
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -31,12 +30,11 @@ records = []
 for degree in degrees:
     model = make_pipeline(StandardScaler(),
                       PolynomialFeatures(degree=degree, include_bias=False), LinearRegression())
+
     #Measure the training time
-    t_start = time.perf_counter()
+    #Train the model on the training set
 
     model.fit(x_train , y_train)
-
-    fit_time = time.perf_counter() - t_start
 
     #Predict the test set targets
     y_test_pred = model.predict(x_test)
@@ -47,10 +45,10 @@ for degree in degrees:
     for j, target in enumerate(TARGET_COLUMNS):
         rmse = root_mean_squared_error(y_test[:, j], y_test_pred[:, j])
         nrmse = rmse / iqr[j]
-        records.append((degree, target, rmse, nrmse, fit_time))
+        records.append((degree, target, rmse, nrmse))
 
 #Save the results of the degree search
-columns = ["degree", "target", "RMSE", "NRMSE", "fit_time_s"]
+columns = ["degree", "target", "RMSE", "NRMSE"]
 df_results = pd.DataFrame.from_records(records, columns = columns)
 df_results.to_csv(os.path.join(TABLES_DIR, "table_polynomial_search.csv"), index = False)
 
